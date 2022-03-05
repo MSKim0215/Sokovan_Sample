@@ -1,2 +1,4 @@
 # Sokovan_Sample
-Sokovan Base Simple Sample.
+
+Platform : PC
+Description : Sokovan Base Simple Sample.
