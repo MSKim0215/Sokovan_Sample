@@ -23,13 +23,5 @@ public class Player : Character
 
         base.Move();
 
-        float inputX = Input.GetAxis("Horizontal");
-        float inputZ = Input.GetAxis("Vertical");
-        float gravity = rigid.velocity.y;
-
-        Vector3 velocity = new Vector3(inputX, 0, inputZ);
-        velocity *= speed;
-        velocity.y = gravity;
-        rigid.velocity = velocity;
     }
 }

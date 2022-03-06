@@ -12,8 +12,10 @@ public class Character : MonoBehaviour
     [Header("State")]
     [SerializeField] protected State state = State.IDLE;
 
-    [Header("Stat")]
-    [SerializeField] protected float speed = 10f;
+    // Transform
+    protected Vector3 targetPos;
+    protected int moveX;
+    protected int moveZ;
 
     // Physic
     protected Rigidbody rigid;
@@ -30,5 +32,14 @@ public class Character : MonoBehaviour
 
     protected virtual void Move()
     {
+        transform.position = Vector3.Lerp(transform.position, targetPos, 0.5f);
+    }
+
+
+    protected void ParsePosition()
+    {
+        gameObject.transform.position = targetPos;
+        moveX = (int)targetPos.x;
+        moveZ = (int)targetPos.z;
     }
 }
