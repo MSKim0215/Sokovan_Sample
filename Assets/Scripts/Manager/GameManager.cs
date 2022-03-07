@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System;
+using UnityEngine.Tilemaps;
 
 [Serializable]
 public class Node
@@ -28,7 +29,7 @@ public class GameManager : MonoBehaviour
     private Vector2Int bottomLeft, topRight, startPos, targetPos;
 
     [Header("Path List")]
-    [SerializeField] private List<Node> pathNodeList;
+    [SerializeField] private List<Node> pathNodeList = null;
 
     private bool allowDiagonal, dontCrossCorner;
 
@@ -65,8 +66,8 @@ public class GameManager : MonoBehaviour
         Transform start = GameObject.Find("StartPos").transform;
         Transform target = GameObject.Find("EndPos").transform;
 
-        startPos = new Vector2Int((int)start.position.x, (int)start.position.y);
-        targetPos = new Vector2Int((int)target.position.x, (int)target.position.y);
+        startPos = new Vector2Int((int)(start.position.x - bottomLeft.x), (int)(start.position.y - bottomLeft.y));
+        targetPos = new Vector2Int((int)(target.position.x - bottomLeft.x), (int)(target.position.y - bottomLeft.y));
 
         startNode = nodes[startPos.x, startPos.y];
         targetNode = nodes[targetPos.x, targetPos.y];
@@ -90,7 +91,7 @@ public class GameManager : MonoBehaviour
             closeNodeList.Add(curNode);
 
             if (curNode == targetNode)
-            {
+            {   // 마지막
                 Node targetCurNode = targetNode;
                 while (targetCurNode != startNode)
                 {
@@ -100,6 +101,13 @@ public class GameManager : MonoBehaviour
 
                 pathNodeList.Add(startNode);
                 pathNodeList.Reverse();
+
+                for(int i = 0; i < pathNodeList.Count; i++)
+                {
+                    Debug.Log($"{i}번째는 {pathNodeList[i].x} , {pathNodeList[i].y}");
+                }
+
+                DrawPath();
                 return;
             }
 
@@ -112,11 +120,28 @@ public class GameManager : MonoBehaviour
 
     private void OpenNodeListAdd(int _x, int _y)
     {
-        if(_x >= 0 && _x < sizeX && _y >= 0 && _y < sizeY && !nodes[_x,_y].isWall && !closeNodeList.Contains(nodes[_x,_y]))
+        if (_x >= 0 && _x < sizeX && _y >= 0 && _y < sizeY && !nodes[_x, _y].isWall && !closeNodeList.Contains(nodes[_x, _y]))
         {   // 상하좌우 범위 안벗어나고, 벽이 아니고, 닫힌 리스트에 없다면
-            if(allowDiagonal)
+            if (allowDiagonal)
             {   // 대각선 허용시, 벽사이 통과 불가
                 if (nodes[curNode.x, _y].isWall && nodes[_x, curNode.y].isWall) return;
+            }
+
+            if (dontCrossCorner)
+            {   // 코너를 가로질러 가지 않을 시, 이동 중에 수직수평 장애물이 있으면 안됨
+                if (nodes[curNode.x, _y].isWall || nodes[_x, curNode.y].isWall) return;
+            }
+
+            // 이웃 노드에 넣고, 직선은 10, 대각선은 14비용
+            Node neighborNode = nodes[_x, _y];
+            int moveCost = curNode.G + (curNode.x - _y == 0 || curNode.y - _y == 0 ? 10 : 14);
+            if (moveCost < neighborNode.G || !openNodeList.Contains(neighborNode))
+            {   // 이동 비용이 이웃노드 G보다 작거나 또는 열린 리스트에 이웃노드가 없다면 G, H, ParentNode를 설정 후 열린 리스트에 추가
+                neighborNode.G = moveCost;
+                neighborNode.H = (Mathf.Abs(neighborNode.x - targetNode.x) + Mathf.Abs(neighborNode.y - targetNode.y)) * 10;
+                neighborNode.parentNode = curNode;
+
+                openNodeList.Add(neighborNode);
             }
         }
     }
@@ -127,8 +152,22 @@ public class GameManager : MonoBehaviour
         {
             for (int i = 0; i < pathNodeList.Count - 1; i++)
             {
-                Gizmos.DrawLine(new Vector2(pathNodeList[i].x, pathNodeList[i].y),
-                    new Vector2(pathNodeList[i + 1].x, pathNodeList[i + 1].y));
+                Gizmos.DrawLine(new Vector2(pathNodeList[i].x, pathNodeList[i].y),  new Vector2(pathNodeList[i + 1].x, pathNodeList[i + 1].y));
+            }
+        }
+    }
+
+    private void DrawPath()
+    {
+        if(pathNodeList.Count != 0)
+        {
+            Tilemap tilemap = GameObject.Find("Grid/Tilemap").GetComponent<Tilemap>();
+            
+            for (int i = 0; i < pathNodeList.Count - 1; i++)
+            {
+                //Gizmos.DrawLine(new Vector2(pathNodeList[i].x, pathNodeList[i].y), new Vector2(pathNodeList[i + 1].x, pathNodeList[i + 1].y));
+                tilemap.SetTileFlags(new Vector3Int(pathNodeList[i].x, pathNodeList[i].y, 0), TileFlags.None);
+                tilemap.SetColor(new Vector3Int(pathNodeList[i].x, pathNodeList[i].y, 0), Color.blue);
             }
         }
     }
