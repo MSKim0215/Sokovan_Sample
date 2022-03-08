@@ -27,6 +27,8 @@ public class GameManager : MonoBehaviour
 {
     // Transform
     private Vector2Int bottomLeft, topRight, startPos, targetPos;
+    public Vector2Int BottomLeft => bottomLeft;
+    public Vector2Int TopRight => topRight;
 
     [Header("Path List")]
     [SerializeField] private List<Node> pathNodeList = null;
@@ -35,13 +37,21 @@ public class GameManager : MonoBehaviour
 
     private int sizeX, sizeY;
     private Node[,] nodes;
+    public Node[,] Nodes => nodes;
     private Node startNode, targetNode, curNode;
     private List<Node> openNodeList, closeNodeList;
 
-    public void PathFinding()
-    {   
-        topRight = new Vector2Int(1, 4);
-        bottomLeft = new Vector2Int(-9, -5);
+    private void Start()
+    {
+        CheckNodes();
+    }
+
+    private void CheckNodes()
+    {
+        GameObject bottomLeftObj = GameObject.Find("NodeArea/BottomLeft");
+        GameObject topRightObj = GameObject.Find("NodeArea/TopRight");
+        bottomLeft = new Vector2Int(((int)bottomLeftObj.transform.position.x), ((int)bottomLeftObj.transform.position.y));
+        topRight = new Vector2Int(((int)topRightObj.transform.position.x), ((int)topRightObj.transform.position.y));
 
         sizeX = topRight.x - bottomLeft.x + 1;
         sizeY = topRight.y - bottomLeft.y + 1;
@@ -52,65 +62,63 @@ public class GameManager : MonoBehaviour
             for (int j = 0; j < sizeY; j++)
             {
                 bool isWall = false;
-                foreach(Collider2D col in Physics2D.OverlapCircleAll(new Vector2(i,j),0.4f))
-                {
-                    if(col.gameObject.layer == LayerMask.NameToLayer("Wall"))
-                    {
-                        isWall = true;
-                    }
-                }
-                nodes[i, j] = new Node(isWall, i, j);
+                foreach (Collider2D col in Physics2D.OverlapCircleAll(new Vector2(i + bottomLeft.x, j + bottomLeft.y), 0.4f))
+                    if (col.gameObject.layer == LayerMask.NameToLayer("Wall")) isWall = true;
+
+                nodes[i, j] = new Node(isWall, i + bottomLeft.x, j + bottomLeft.y);
             }
         }
+    }
 
-        Transform start = GameObject.Find("StartPos").transform;
-        Transform target = GameObject.Find("EndPos").transform;
+    public void PathFinding()
+    {
+        CheckNodes();
 
-        startPos = new Vector2Int((int)(start.position.x - bottomLeft.x), (int)(start.position.y - bottomLeft.y));
-        targetPos = new Vector2Int((int)(target.position.x - bottomLeft.x), (int)(target.position.y - bottomLeft.y));
+        GameObject player = GameObject.Find("Player");
+        GameObject end = GameObject.Find("EndPos");
 
-        startNode = nodes[startPos.x, startPos.y];
-        targetNode = nodes[targetPos.x, targetPos.y];
+        startPos = new Vector2Int((int)player.transform.position.x, (int)player.transform.position.y);
+        targetPos = new Vector2Int((int)end.transform.position.x, (int)end.transform.position.y);
+
+
+        // 시작과 끝 노드, 열린리스트와 닫힌리스트, 마지막리스트 초기화
+        startNode = nodes[startPos.x - bottomLeft.x, startPos.y - bottomLeft.y];
+        targetNode = nodes[targetPos.x - bottomLeft.x, targetPos.y - bottomLeft.y];
 
         openNodeList = new List<Node>() { startNode };
         closeNodeList = new List<Node>();
         pathNodeList = new List<Node>();
 
+
         while (openNodeList.Count > 0)
         {
+            // 열린리스트 중 가장 F가 작고 F가 같다면 H가 작은 걸 현재노드로 하고 열린리스트에서 닫힌리스트로 옮기기
             curNode = openNodeList[0];
             for (int i = 1; i < openNodeList.Count; i++)
-            {
-                if(openNodeList[i].F <= curNode.F && openNodeList[i].H < curNode.H)
-                {
-                    curNode = openNodeList[i];
-                }
-            }
+                if (openNodeList[i].F <= curNode.F && openNodeList[i].H < curNode.H) curNode = openNodeList[i];
 
             openNodeList.Remove(curNode);
             closeNodeList.Add(curNode);
 
-            if (curNode == targetNode)
-            {   // 마지막
-                Node targetCurNode = targetNode;
-                while (targetCurNode != startNode)
-                {
-                    pathNodeList.Add(targetCurNode);
-                    targetCurNode = targetCurNode.parentNode;
-                }
 
+            // 마지막
+            if (curNode == targetNode)
+            {
+                Node TargetcurNode = targetNode;
+                while (TargetcurNode != startNode)
+                {
+                    pathNodeList.Add(TargetcurNode);
+                    TargetcurNode = TargetcurNode.parentNode;
+                }
                 pathNodeList.Add(startNode);
                 pathNodeList.Reverse();
 
-                for(int i = 0; i < pathNodeList.Count; i++)
-                {
-                    Debug.Log($"{i}번째는 {pathNodeList[i].x} , {pathNodeList[i].y}");
-                }
-
-                DrawPath();
+                //for (int i = 0; i < pathNodeList.Count; i++) print(i + "번째는 " + pathNodeList[i].x + ", " + pathNodeList[i].y);
+                StartCoroutine(CoroutineDrawPath());
                 return;
             }
 
+            // ↑ → ↓ ←
             OpenNodeListAdd(curNode.x, curNode.y + 1);
             OpenNodeListAdd(curNode.x + 1, curNode.y);
             OpenNodeListAdd(curNode.x, curNode.y - 1);
@@ -118,56 +126,47 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private void OpenNodeListAdd(int _x, int _y)
+    void OpenNodeListAdd(int _x, int _y)
     {
-        if (_x >= 0 && _x < sizeX && _y >= 0 && _y < sizeY && !nodes[_x, _y].isWall && !closeNodeList.Contains(nodes[_x, _y]))
-        {   // 상하좌우 범위 안벗어나고, 벽이 아니고, 닫힌 리스트에 없다면
-            if (allowDiagonal)
-            {   // 대각선 허용시, 벽사이 통과 불가
-                if (nodes[curNode.x, _y].isWall && nodes[_x, curNode.y].isWall) return;
-            }
-
-            if (dontCrossCorner)
-            {   // 코너를 가로질러 가지 않을 시, 이동 중에 수직수평 장애물이 있으면 안됨
-                if (nodes[curNode.x, _y].isWall || nodes[_x, curNode.y].isWall) return;
-            }
-
-            // 이웃 노드에 넣고, 직선은 10, 대각선은 14비용
-            Node neighborNode = nodes[_x, _y];
-            int moveCost = curNode.G + (curNode.x - _y == 0 || curNode.y - _y == 0 ? 10 : 14);
-            if (moveCost < neighborNode.G || !openNodeList.Contains(neighborNode))
-            {   // 이동 비용이 이웃노드 G보다 작거나 또는 열린 리스트에 이웃노드가 없다면 G, H, ParentNode를 설정 후 열린 리스트에 추가
-                neighborNode.G = moveCost;
-                neighborNode.H = (Mathf.Abs(neighborNode.x - targetNode.x) + Mathf.Abs(neighborNode.y - targetNode.y)) * 10;
-                neighborNode.parentNode = curNode;
-
-                openNodeList.Add(neighborNode);
-            }
-        }
-    }
-
-    private void OnDrawGizmos()
-    {
-        if (pathNodeList.Count != 0)
+        // 상하좌우 범위를 벗어나지 않고, 벽이 아니면서, 닫힌리스트에 없다면
+        if (_x >= bottomLeft.x && _x < topRight.x + 1 && _y >= bottomLeft.y && _y < topRight.y + 1 && !nodes[_x - bottomLeft.x, _y - bottomLeft.y].isWall && !closeNodeList.Contains(nodes[_x - bottomLeft.x, _y - bottomLeft.y]))
         {
-            for (int i = 0; i < pathNodeList.Count - 1; i++)
+            // 대각선 허용시, 벽 사이로 통과 안됨
+            if (allowDiagonal) if (nodes[curNode.x - bottomLeft.x, _y - bottomLeft.y].isWall && nodes[_x - bottomLeft.x, curNode.y - bottomLeft.y].isWall) return;
+
+            // 코너를 가로질러 가지 않을시, 이동 중에 수직수평 장애물이 있으면 안됨
+            if (dontCrossCorner) if (nodes[curNode.x - bottomLeft.x, _y - bottomLeft.y].isWall || nodes[_x - bottomLeft.x, curNode.y - bottomLeft.y].isWall) return;
+
+
+            // 이웃노드에 넣고, 직선은 10, 대각선은 14비용
+            Node NeighborNode = nodes[_x - bottomLeft.x, _y - bottomLeft.y];
+            int MoveCost = curNode.G + (curNode.x - _x == 0 || curNode.y - _y == 0 ? 10 : 14);
+
+
+            // 이동비용이 이웃노드G보다 작거나 또는 열린리스트에 이웃노드가 없다면 G, H, ParentNode를 설정 후 열린리스트에 추가
+            if (MoveCost < NeighborNode.G || !openNodeList.Contains(NeighborNode))
             {
-                Gizmos.DrawLine(new Vector2(pathNodeList[i].x, pathNodeList[i].y),  new Vector2(pathNodeList[i + 1].x, pathNodeList[i + 1].y));
+                NeighborNode.G = MoveCost;
+                NeighborNode.H = (Mathf.Abs(NeighborNode.x - targetNode.x) + Mathf.Abs(NeighborNode.y - targetNode.y)) * 10;
+                NeighborNode.parentNode = curNode;
+
+                openNodeList.Add(NeighborNode);
             }
         }
     }
 
-    private void DrawPath()
+    private IEnumerator CoroutineDrawPath()
     {
         if(pathNodeList.Count != 0)
         {
             Tilemap tilemap = GameObject.Find("Grid/Tilemap").GetComponent<Tilemap>();
             
-            for (int i = 0; i < pathNodeList.Count - 1; i++)
+            for (int i = 0; i < pathNodeList.Count; i++)
             {
-                //Gizmos.DrawLine(new Vector2(pathNodeList[i].x, pathNodeList[i].y), new Vector2(pathNodeList[i + 1].x, pathNodeList[i + 1].y));
                 tilemap.SetTileFlags(new Vector3Int(pathNodeList[i].x, pathNodeList[i].y, 0), TileFlags.None);
                 tilemap.SetColor(new Vector3Int(pathNodeList[i].x, pathNodeList[i].y, 0), Color.blue);
+
+                yield return new WaitForSeconds(0.1f);
             }
         }
     }
