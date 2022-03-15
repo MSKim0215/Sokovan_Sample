@@ -114,11 +114,20 @@ public class GameManager : MonoBehaviour
                 pathNodeList.Reverse();
 
                 //for (int i = 0; i < pathNodeList.Count; i++) print(i + "번째는 " + pathNodeList[i].x + ", " + pathNodeList[i].y);
+                //if(!isPath)
+                //{
+                //    isPath = true;
+                //    StartCoroutine(CoroutineDrawPath());
+                //}
+                //else
+                //{
+                //    isPath = false;
+                //    RemovePath();
+                //}
                 StartCoroutine(CoroutineDrawPath());
                 return;
             }
 
-            // ↑ → ↓ ←
             OpenNodeListAdd(curNode.x, curNode.y + 1);
             OpenNodeListAdd(curNode.x + 1, curNode.y);
             OpenNodeListAdd(curNode.x, curNode.y - 1);
@@ -166,25 +175,47 @@ public class GameManager : MonoBehaviour
                 tilemap.SetTileFlags(new Vector3Int(pathNodeList[i].x, pathNodeList[i].y, 0), TileFlags.None);
                 tilemap.SetColor(new Vector3Int(pathNodeList[i].x, pathNodeList[i].y, 0), Color.blue);
 
-                yield return new WaitForSeconds(0.1f);
+                //yield return new WaitForSeconds(0.1f);
+                yield return null;
+            }
+        }
+    }
+
+    public void RemovePath()
+    {
+        Tilemap tilemap = GameObject.Find("Grid/Tilemap").GetComponent<Tilemap>();
+
+        for (int i = 0; i < nodes.GetLength(0); i++)
+        {
+            for (int j = 0; j < nodes.GetLength(1); j++)
+            {
+                tilemap.SetTileFlags(new Vector3Int(nodes[i, j].x, nodes[i, j].y, 0), TileFlags.None);
+                tilemap.SetColor(new Vector3Int(nodes[i, j].x, nodes[i, j].y, 0), Color.white);
             }
         }
     }
 
     [Header("Active Items")]
-    [SerializeField] private ItemBox[] active_itemboxes = null;
+    [SerializeField] private List<ItemBox> active_itemboxes = null;
+    public List<ItemBox> Active_ItemBoxes => active_itemboxes;
 
     [Header("Success Items")]
     [SerializeField] private List<ItemBox> success_itemboxes = null;
+
+    [Header("Active Finish")]
+    [SerializeField] private List<ItemBox> active_finishes = null;
+    public List<ItemBox> Active_Finishes => active_finishes;
 
     // WIN
     private GameObject winTextObj;
     private bool isGameOver = false;
     public bool IsGameOver => isGameOver;
 
+    private bool isPath = false;
+
     private void Awake()
     {
-        //SetItems();
+        SetItems();
 
         //GameObject uiCanvas = GameObject.Find("UICanvas");
         //winTextObj = uiCanvas.transform.Find("WinText").gameObject;
@@ -196,12 +227,29 @@ public class GameManager : MonoBehaviour
         {
             SceneManager.LoadScene("Main");
         }
+        else if(Input.GetKeyDown(KeyCode.R)) SceneManager.LoadScene("Main");
+
+        PathFinding();
     }
 
     private void SetItems()
     {
-        active_itemboxes = FindObjectsOfType<ItemBox>();
+        GameObject[] itemboxes = GameObject.FindGameObjectsWithTag("ItemBox");
+        active_itemboxes = new List<ItemBox>();
         success_itemboxes = new List<ItemBox>();
+
+        GameObject[] finishes = GameObject.FindGameObjectsWithTag("Finish");
+        active_finishes = new List<ItemBox>();
+
+        for (int i = 0; i < itemboxes.Length; i++)
+        {
+            active_itemboxes.Add(itemboxes[i].GetComponent<ItemBox>());
+        }
+
+        for (int i = 0; i < finishes.Length; i++)
+        {
+            active_finishes.Add(finishes[i].GetComponent<ItemBox>());
+        }
     }
 
     public void IncreaseItemBox(ItemBox _itembox)
@@ -212,6 +260,15 @@ public class GameManager : MonoBehaviour
         }
         success_itemboxes.Add(_itembox);
         GameChecker();
+
+        
+        if(success_itemboxes.Count >= 0)
+        {
+            GameObject end = GameObject.Find("EndPos");
+            end.transform.position = active_finishes[success_itemboxes.Count].transform.position;
+            targetPos = new Vector2Int((int)end.transform.position.x, (int)end.transform.position.y);
+        }
+        
     }
 
     public void DecreaseItemBox(ItemBox _itembox)
@@ -221,14 +278,23 @@ public class GameManager : MonoBehaviour
         {
             success_itemboxes.Remove(_itembox);
         }
+
+        if (active_finishes.Count >= 0)
+        {
+            GameObject end = GameObject.Find("EndPos");
+            end.transform.position = active_finishes[success_itemboxes.Count].transform.position;
+            targetPos = new Vector2Int((int)end.transform.position.x, (int)end.transform.position.y);
+        }
     }
 
     private void GameChecker()
     {
-        if (success_itemboxes.Count == active_itemboxes.Length && !isGameOver)
+        if (success_itemboxes.Count == active_itemboxes.Count && !isGameOver)
         {
             isGameOver = true;
             winTextObj.SetActive(true);
         }
     }
+
+
 }

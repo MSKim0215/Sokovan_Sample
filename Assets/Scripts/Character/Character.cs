@@ -20,6 +20,9 @@ public class Character : MonoBehaviour
     // Physic
     protected Rigidbody rigid;
 
+    // Renderer
+    protected SpriteRenderer spriteRenderer;
+
     protected virtual void Awake()
     {
         Init();
@@ -28,18 +31,10 @@ public class Character : MonoBehaviour
     private void Init()
     {
         rigid = GetComponent<Rigidbody>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
     protected virtual void Move()
     {
-        //transform.position = Vector3.Lerp(transform.position, targetPos, 0.5f);
-    }
-
-
-    protected void ParsePosition()
-    {
-        gameObject.transform.position = targetPos;
-        moveX = (int)targetPos.x;
-        moveZ = (int)targetPos.z;
     }
 }
