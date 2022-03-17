@@ -12,6 +12,9 @@ public class ItemBox : Item
     private Color originColor;
     private Color triggerColor;
 
+    [Header("Overaped Finish")]
+    [SerializeField] private ItemBox overapedFinish = null;
+
     protected override void Awake()
     {
         base.Awake();
@@ -72,11 +75,12 @@ public class ItemBox : Item
         for (int i = 0; i < gameMgr.Active_Finishes.Count; i++)
         {
             ItemBox finish = gameMgr.Active_Finishes[i];
-            if(finish.transform.position.x == _pos.x && finish.transform.position.y == _pos.y)
+            if (finish.transform.position.x == _pos.x && finish.transform.position.y == _pos.y)
             {   // 깃발이랑 같은 위치라면, 클리어 상태
                 isOveraped = true;
                 ChangeToMaterialColor(triggerColor);
-                gameMgr.IncreaseItemBox(this);
+                gameMgr.ProcessIncreaseLogic(this, finish);
+                overapedFinish = finish;
                 return true;
             }
         }
@@ -84,7 +88,8 @@ public class ItemBox : Item
         {
             isOveraped = false;
             ChangeToMaterialColor(originColor);
-            gameMgr.DecreaseItemBox(this);
+            gameMgr.ProcessDecreaseLogic(this, overapedFinish);
+            overapedFinish = null;
         }
         return true;
     }
