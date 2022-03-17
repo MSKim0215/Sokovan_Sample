@@ -41,6 +41,11 @@ public class GameManager : MonoBehaviour
     private Node startNode, targetNode, curNode;
     private List<Node> openNodeList, closeNodeList;
 
+    private void Start()
+    {
+        CheckNodes();
+    }
+
     private void CheckNodes()
     {
         GameObject bottomLeftObj = GameObject.Find("NodeArea/BottomLeft");
@@ -70,10 +75,10 @@ public class GameManager : MonoBehaviour
         CheckNodes();
 
         GameObject player = GameObject.Find("Player");
-        //GameObject end = GameObject.Find("EndPos");
+        GameObject end = GameObject.Find("EndPos");
 
         startPos = new Vector2Int((int)player.transform.position.x, (int)player.transform.position.y);
-        //targetPos = new Vector2Int((int)end.transform.position.x, (int)end.transform.position.y);
+        targetPos = new Vector2Int((int)end.transform.position.x, (int)end.transform.position.y);
 
 
         // 시작과 끝 노드, 열린리스트와 닫힌리스트, 마지막리스트 초기화
@@ -107,6 +112,18 @@ public class GameManager : MonoBehaviour
                 }
                 pathNodeList.Add(startNode);
                 pathNodeList.Reverse();
+
+                //for (int i = 0; i < pathNodeList.Count; i++) print(i + "번째는 " + pathNodeList[i].x + ", " + pathNodeList[i].y);
+                //if(!isPath)
+                //{
+                //    isPath = true;
+                //    StartCoroutine(CoroutineDrawPath());
+                //}
+                //else
+                //{
+                //    isPath = false;
+                //    RemovePath();
+                //}
                 StartCoroutine(CoroutineDrawPath());
                 return;
             }
@@ -189,12 +206,6 @@ public class GameManager : MonoBehaviour
     [SerializeField] private List<ItemBox> active_finishes = null;
     public List<ItemBox> Active_Finishes => active_finishes;
 
-    [Header("Success Finish")]
-    [SerializeField] private List<ItemBox> success_finishes = null;
-
-    [Header("Quest Target")]
-    [SerializeField] private ItemBox targetFinish = null;
-
     // WIN
     private GameObject winTextObj;
     private bool isGameOver = false;
@@ -206,38 +217,8 @@ public class GameManager : MonoBehaviour
     {
         SetItems();
 
-        GameObject uiCanvas = GameObject.Find("UICanvas");
-        winTextObj = uiCanvas.transform.Find("WinText").gameObject;
-    }
-
-    private void Start()
-    {
-        SetTargetFinish();
-    }
-
-    private void SetTargetFinish()
-    {
-        if (targetFinish == null)
-        {
-            if (success_finishes.Count == active_finishes.Count) GameChecker();
-            else
-            {
-                for(int i = 0; i < active_finishes.Count; i++)
-                {
-                    if (!success_finishes.Contains(active_finishes[i]))
-                    {
-                        targetFinish = active_finishes[i];
-                        targetPos = new Vector2Int((int)targetFinish.transform.position.x, (int)targetFinish.transform.position.y);
-                        return;
-                    }
-                }
-                if(targetFinish == null)
-                {
-                    targetFinish = active_finishes[0];
-                    targetPos = new Vector2Int((int)targetFinish.transform.position.x, (int)targetFinish.transform.position.y);
-                }
-            }
-        }
+        //GameObject uiCanvas = GameObject.Find("UICanvas");
+        //winTextObj = uiCanvas.transform.Find("WinText").gameObject;
     }
 
     private void Update()
@@ -259,7 +240,6 @@ public class GameManager : MonoBehaviour
 
         GameObject[] finishes = GameObject.FindGameObjectsWithTag("Finish");
         active_finishes = new List<ItemBox>();
-        success_finishes = new List<ItemBox>();
 
         for (int i = 0; i < itemboxes.Length; i++)
         {
@@ -272,54 +252,38 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void ProcessIncreaseLogic(ItemBox _itembox, ItemBox _finish)
-    {
-        IncreaseItemBox(_itembox);
-        IncreaseFinish(_finish);
-        SetTargetFinish();
-    }
-
-    private void IncreaseItemBox(ItemBox _itembox)
+    public void IncreaseItemBox(ItemBox _itembox)
     {
         if(success_itemboxes.Count > 0)
         {
             if (success_itemboxes.Find(x => x == _itembox)) return;
         }
         success_itemboxes.Add(_itembox);
-    }
+        GameChecker();
 
-    private void IncreaseFinish(ItemBox _finish)
-    {
-        if(success_finishes.Count > 0)
+        
+        if(success_itemboxes.Count >= 0)
         {
-            if (success_finishes.Find(x => x == _finish)) return;
+            GameObject end = GameObject.Find("EndPos");
+            end.transform.position = active_finishes[success_itemboxes.Count].transform.position;
+            targetPos = new Vector2Int((int)end.transform.position.x, (int)end.transform.position.y);
         }
-        success_finishes.Add(_finish);
-
-        if (_finish == targetFinish) targetFinish = null;
+        
     }
 
-    public void ProcessDecreaseLogic(ItemBox _itembox, ItemBox _finish)
-    {
-        DecreaseItemBox(_itembox);
-        DecreaseFinish(_finish);
-    }
-
-    private void DecreaseItemBox(ItemBox _itembox)
+    public void DecreaseItemBox(ItemBox _itembox)
     {
         if (success_itemboxes.Count <= 0) return;
         if (success_itemboxes.Find(x => x == _itembox))
         {
             success_itemboxes.Remove(_itembox);
         }
-    }
 
-    private void DecreaseFinish(ItemBox _finish)
-    {
-        if (success_finishes.Count <= 0) return;
-        if (success_finishes.Find(x => x == _finish))
+        if (active_finishes.Count >= 0)
         {
-            success_finishes.Remove(_finish);
+            GameObject end = GameObject.Find("EndPos");
+            end.transform.position = active_finishes[success_itemboxes.Count].transform.position;
+            targetPos = new Vector2Int((int)end.transform.position.x, (int)end.transform.position.y);
         }
     }
 

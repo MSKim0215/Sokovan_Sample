@@ -19,8 +19,6 @@ public class Player : Character
 
     protected override void Move()
     {
-        if (gameMgr.IsGameOver) return;
-
         if(Input.GetKeyDown(KeyCode.LeftArrow))
         {
             spriteRenderer.flipX = true;
