@@ -22,6 +22,7 @@ public class Character : MonoBehaviour
 
     // Renderer
     protected SpriteRenderer spriteRenderer;
+    protected Sprite[] sprites;
 
     protected virtual void Awake()
     {
