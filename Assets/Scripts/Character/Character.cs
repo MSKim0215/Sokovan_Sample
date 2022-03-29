@@ -13,7 +13,7 @@ public class Character : MonoBehaviour
     [SerializeField] protected State state = State.IDLE;
 
     // Transform
-    protected Vector3 targetPos;
+    protected Vector2 targetPos;
     protected int moveX;
     protected int moveZ;
 
@@ -29,7 +29,7 @@ public class Character : MonoBehaviour
         Init();
     }
 
-    private void Init()
+    protected virtual void Init()
     {
         rigid = GetComponent<Rigidbody>();
         spriteRenderer = GetComponent<SpriteRenderer>();
