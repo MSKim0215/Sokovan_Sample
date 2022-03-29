@@ -3,15 +3,15 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Item : MonoBehaviour
+public class Object : MonoBehaviour
 {
     protected enum Type
     {
-        ItemBox, Finish
+        Box, Finish
     }
 
     [Header("Type")]
-    [SerializeField] protected Type type = Type.ItemBox;
+    [SerializeField] protected Type type = Type.Box;
 
     // Renderer
     protected Renderer render { private set; get; }

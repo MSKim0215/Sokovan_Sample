@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ItemBox : Item
+public class ItemBox : Object
 {
     private GameManager gameMgr;
 
@@ -25,7 +25,7 @@ public class ItemBox : Item
     {
         base.Start();
 
-        if (type == Type.ItemBox) SetColor();
+        if (type == Type.Box) SetColor();
     }
 
     #region ItemBox
@@ -92,26 +92,6 @@ public class ItemBox : Item
             overapedFinish = null;
         }
         return true;
-    }
-    #endregion
-
-    #region Finish
-    private void CheckTriggerBox()
-    {
-        if (type != Type.ItemBox)
-        {
-            for (int i = 0; i < gameMgr.Active_ItemBoxes.Count; i++)
-            {
-                ItemBox itemBox = gameMgr.Active_ItemBoxes[i];
-                if (itemBox != null)
-                {
-                    if(transform.position.x == itemBox.transform.position.x && transform.position.y == itemBox.transform.position.y)
-                    {
-
-                    }                       
-                }
-            }
-        }
     }
     #endregion
 }
