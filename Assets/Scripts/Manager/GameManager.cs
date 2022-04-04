@@ -105,11 +105,7 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        if(isGameOver && Input.GetKeyDown(KeyCode.Space))
-        {
-            SceneManager.LoadScene("Main");
-        }
-        else if(Input.GetKeyDown(KeyCode.R)) SceneManager.LoadScene("Main");
+        if(Input.GetKeyDown(KeyCode.R)) SceneManager.LoadScene("Main");
 
         PathFinding();
     }
