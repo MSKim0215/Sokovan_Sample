@@ -25,10 +25,9 @@ public class ItemBox : Object
     {
         base.Start();
 
-        if (type == Type.Box) SetColor();
+        SetColor();
     }
 
-    #region ItemBox
     private void SetColor()
     {
         originColor = render.material.color;
@@ -38,18 +37,14 @@ public class ItemBox : Object
     public bool MoveCheck(Vector2 _vec)
     {
         Vector2Int targetPos = new Vector2Int((int)(transform.position.x + _vec.x), (int)(transform.position.y + _vec.y));      // 이동할 위치
-        if (targetPos.x >= gameMgr.BottomLeft.x && targetPos.x < gameMgr.TopRight.x + 1 && targetPos.y >= gameMgr.BottomLeft.y && targetPos.y < gameMgr.TopRight.y + 1)
+        if(gameMgr.CheckToInsideArea(targetPos.x, targetPos.y))
         {
-            if (!gameMgr.Nodes[targetPos.x - gameMgr.BottomLeft.x, targetPos.y - gameMgr.BottomLeft.y].isWall)     // 벽 체크
+            if (!CheckTriggerBox(targetPos)) return false;
+            else
             {
-                if (!CheckTriggerBox(targetPos)) return false;
-                else
-                {
-                    transform.position = Vector2.Lerp(transform.position, targetPos, 1f);
-                    return true;
-                }                
+                transform.position = Vector2.Lerp(transform.position, targetPos, 1f);
+                return true;
             }
-            return false;
         }
         return false;
     }
@@ -93,5 +88,4 @@ public class ItemBox : Object
         }
         return true;
     }
-    #endregion
 }

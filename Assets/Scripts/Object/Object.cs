@@ -7,11 +7,11 @@ public class Object : MonoBehaviour
 {
     protected enum Type
     {
-        Box, Finish
+        ItemBox, Finish
     }
 
     [Header("Type")]
-    [SerializeField] protected Type type = Type.Box;
+    [SerializeField] protected Type type = Type.ItemBox;
 
     // Renderer
     protected Renderer render { private set; get; }
