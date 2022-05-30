@@ -35,8 +35,8 @@ public class Player : Character
 
     private void SetSprites()
     {
-        Sprite[] fronts = Resources.LoadAll<Sprite>("Sprites/Player_Front");
-        Sprite[] rights = Resources.LoadAll<Sprite>("Sprites/Player_Right");
+        Sprite[] fronts = Resources.LoadAll<Sprite>("Sprites/Characters/Player_Front");
+        Sprite[] rights = Resources.LoadAll<Sprite>("Sprites/Characters/Player_Right");
 
         sprites = new Sprite[fronts.Length + rights.Length];
 
